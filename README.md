@@ -30,7 +30,7 @@ graph are implemented yet.
 | Stage 1 — decomposition | done |
 | Stage 2 — evidence collection | done |
 | Stage 3 — evidence analysis | done |
-| Stage 5 â€” source assessment | not started |
+| Stage 5 — source assessment | done |
 | Stage 4 â€” verification | not started |
 | Stage 6 â€” explainable report | not started |
 | Evidence graph + inspector UI | not started |
@@ -254,6 +254,61 @@ Deterministic checks on every response:
 Retrieved passages are untrusted data. The prompt states that passage content is
 never an instruction, and the schema rejects any attempt to smuggle a verdict
 token through it.
+
+### 10. Stage 5 — source assessment
+
+```powershell
+# after Stage 2 has produced sources
+Invoke-RestMethod -Method Post http://127.0.0.1:8000/api/claims/<id>/assess
+```
+
+Scores each source for authority and recency, classifies its type, and records
+the assessment on the `sources` row. It produces **no** verdicts: aggregation is
+Stage 4.
+
+**Authority and recency are always computed by backend logic**, never by the
+model. Those two numbers feed Stage 4's weighting, and a verdict must be
+reproducible from stored data; a model-produced score would break that.
+
+Authority is a tier lookup (`services/source_tiers.py`) — a data table, not
+logic, so it is auditable and unit-testable:
+
+| Tier | Score | Examples |
+| --- | --- | --- |
+| Government / standards | 1.0 | `.gov`, `.gov.uk`, nist.gov, ietf.org, w3.org |
+| Academic / research | 0.9 | `.edu`, `.ac.uk`, arxiv.org, nature.com |
+| Established reference | 0.8 | wikipedia.org, britannica.com |
+| News / established org | 0.7 | reuters.com, bbc.com, owasp.org, python.org |
+| General web (default) | 0.5 | anything unmatched |
+| Low-signal | 0.3 | medium.com, `.xyz`, content farms |
+
+Matching is exact host, then suffix (so `docs.python.org` inherits `python.org`),
+then TLD, then publisher-name hint.
+
+Recency is piecewise-linear decay from `published_at`, measured against
+`retrieved_at` so it is reproducible from stored data:
+
+```
+age_days = retrieved_at.date() - published_at
+published_at is null      -> 0.5   (neutral, not punished)
+age <= window             -> 1.0
+age <= 1095               -> 1.0 - 0.4 * (age - window) / (1095 - window)
+else                      -> max(0.2, 0.6 - 0.4 * (age - 1095) / 1825)
+future dates              -> 1.0 (clamped)
+```
+
+`window` is 365 days, or 180 for `technology` claims, because technology ages
+faster. The 0.2 floor keeps an old-but-relevant source usable rather than
+zeroing it.
+
+`source_type` and `cites_primary_sources` may be enriched by one cached LLM call
+per unique `content_hash`. If the provider is unavailable, the stage still
+completes: `source_type` falls back to a deterministic guess from the domain
+tier, and `cites_primary_sources` stays `NULL` rather than being invented.
+
+Authority is not truth. A government site can publish something wrong; a blog can
+publish something right. This stage describes the publisher — Stage 3 already
+judged the passage.
 
 ---
 
