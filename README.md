@@ -31,7 +31,7 @@ graph are implemented yet.
 | Stage 2 — evidence collection | done |
 | Stage 3 — evidence analysis | done |
 | Stage 5 — source assessment | done |
-| Stage 4 â€” verification | not started |
+| Stage 4 — verification | done |
 | Stage 6 â€” explainable report | not started |
 | Evidence graph + inspector UI | not started |
 | Evaluation harness | not started |
@@ -309,6 +309,53 @@ tier, and `cites_primary_sources` stays `NULL` rather than being invented.
 Authority is not truth. A government site can publish something wrong; a blog can
 publish something right. This stage describes the publisher — Stage 3 already
 judged the passage.
+
+### 11. Stage 4 — verification (deterministic)
+
+```powershell
+Invoke-RestMethod -Method Post http://127.0.0.1:8000/api/claims/<id>/verify
+```
+
+Computes one `subclaim_verdicts` row per subclaim and one `verdicts` row per
+claim, from stored evidence links and source scores.
+
+**No model is involved.** `stage4_verify.py` imports no LLM, and a test asserts
+that structurally. The verdict must be reproducible from stored rows alone.
+
+Link weight is the five-factor product:
+
+```
+w = authority × recency × relevance × evidence_quality × stance_confidence
+```
+
+Links with `w < 0.15` are excluded from all sums but left in the database.
+`INSUFFICIENT` links never contribute weight. A `NULL` authority or recency
+score yields `w = 0`, so an unassessed source cannot move a verdict.
+
+Subclaim verdict order (fixed):
+
+```
+T < 0.25                        -> INSUFFICIENT
+C == 0 and M == 0               -> SUPPORTED
+S == 0 and M == 0               -> CONTRADICTED
+M > 0 with S or C               -> MIXED
+S > 0 and C > 0                 -> dominance margin decides
+otherwise                       -> INSUFFICIENT
+```
+
+Overall verdict order (fixed, `agg-1.0.0`):
+
+```
+coverage < 0.50                                    -> INSUFFICIENT_EVIDENCE
+score > 0.20 and contradicted_ratio >= 0.20        -> MISLEADING
+score >= 0.60                                      -> SUPPORTED
+score <= -0.60                                     -> CONTRADICTED
+otherwise                                          -> MIXED
+```
+
+Canonical regression: the HTTPS claim yields SUPPORTED / SUPPORTED /
+CONTRADICTED, overall **MISLEADING** with score `0.3333`, coverage `1.0000`,
+contradicted ratio `0.3333`.
 
 ---
 

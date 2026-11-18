@@ -13,7 +13,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
-from app.api import analysis, assessment, claims, health, retrieval
+from app.api import analysis, assessment, claims, health, retrieval, verification
 
 logger = logging.getLogger(__name__)
 
@@ -68,11 +68,13 @@ def create_app() -> FastAPI:
     app.include_router(retrieval.router, prefix=settings.api_prefix)
     app.include_router(analysis.router, prefix=settings.api_prefix)
     app.include_router(assessment.router, prefix=settings.api_prefix)
+    app.include_router(verification.router, prefix=settings.api_prefix)
 
     return app
 
 
 app = create_app()
+
 
 
 
