@@ -28,7 +28,7 @@ graph are implemented yet.
 | Docker PostgreSQL | done |
 | Database schema (8 tables) + migration | done |
 | Stage 1 — decomposition | done |
-| Stage 2 â€” evidence collection | not started |
+| Stage 2 — evidence collection | done |
 | Stage 3 â€” evidence analysis | not started |
 | Stage 5 â€” source assessment | not started |
 | Stage 4 â€” verification | not started |
@@ -179,12 +179,50 @@ leaves no data behind.
 
 ```powershell
 cd backend
-.\.venv\Scripts\python.exe -m pytest tests -q
+.\.venv\Scripts\python.exe -m pytest -q
 ```
 
 Database tests run against an isolated `claimchain_test` database on the same
 container, with the real migration applied and every test rolled back. The
 development database is never touched.
+
+The live API smoke tests are opt-in and excluded from the default run, so the
+suite never spends quota:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest tests/smoke -q -m smoke
+```
+
+`test_gemini_smoke.py` needs `GEMINI_API_KEY`; `test_exa_smoke.py` needs
+`EXA_API_KEY`. Each skips cleanly when its key is absent.
+
+### 8. Stage 2 — evidence collection
+
+```powershell
+# after POST /api/claims has decomposed a claim
+Invoke-RestMethod -Method Post http://127.0.0.1:8000/api/claims/<id>/retrieve
+```
+
+Runs search, dedupe, SSRF-checked fetching, extraction, chunking and the
+relevance prefilter, then persists `sources` and `passages`. It creates **no**
+evidence links and **no** verdicts: classification is Stage 3.
+
+**Fixture mode** runs the whole stage offline with no `EXA_API_KEY` and no
+network access, using the committed dataset in `app/services/fixtures.py`.
+Enable it with `USE_FIXTURES=true` in `.env`. Fixture runs are recorded with
+`runs.cache_hit = true` so their provenance is never ambiguous.
+
+Hard limits (constants in `app/pipeline/stage2_retrieve.py`):
+
+| Limit | Value |
+| --- | --- |
+| Queries per subclaim | 3 |
+| Results per query | 5 |
+| Total URLs per claim | 30 |
+| Pages fetched per claim | 20 |
+| Fetch timeout | 10 s |
+| Response size cap | 2 MB |
+| Redirects | 5, revalidated each hop |
 
 ---
 

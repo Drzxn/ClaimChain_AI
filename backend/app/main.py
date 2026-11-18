@@ -1,7 +1,7 @@
-"""FastAPI application factory.
+﻿"""FastAPI application factory.
 
 Foundation only. The only route wired up is ``GET /api/health``. Claim,
-evidence, graph, report and pipeline routers land in later phases — see the
+evidence, graph, report and pipeline routers land in later phases â€” see the
 implementation order in the technical specification.
 """
 
@@ -13,7 +13,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
-from app.api import claims, health
+from app.api import claims, health, retrieval
 
 logger = logging.getLogger(__name__)
 
@@ -65,8 +65,10 @@ def create_app() -> FastAPI:
 
     app.include_router(health.router, prefix=settings.api_prefix)
     app.include_router(claims.router, prefix=settings.api_prefix)
+    app.include_router(retrieval.router, prefix=settings.api_prefix)
 
     return app
 
 
 app = create_app()
+
