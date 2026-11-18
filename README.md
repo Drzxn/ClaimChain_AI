@@ -32,7 +32,7 @@ graph are implemented yet.
 | Stage 3 — evidence analysis | done |
 | Stage 5 — source assessment | done |
 | Stage 4 — verification | done |
-| Stage 6 â€” explainable report | not started |
+| Stage 6 — explainable report | done |
 | Evidence graph + inspector UI | not started |
 | Evaluation harness | not started |
 
@@ -356,6 +356,56 @@ otherwise                                          -> MIXED
 Canonical regression: the HTTPS claim yields SUPPORTED / SUPPORTED /
 CONTRADICTED, overall **MISLEADING** with score `0.3333`, coverage `1.0000`,
 contradicted ratio `0.3333`.
+
+### 12. Stage 6 — explainable report
+
+```powershell
+# build, record the run, and stamp report_generated_at
+Invoke-RestMethod -Method Post http://127.0.0.1:8000/api/claims/<id>/report
+
+# read the same report without writing anything
+Invoke-RestMethod http://127.0.0.1:8000/api/claims/<id>/report
+
+# optional model-written prose (off by default)
+Invoke-RestMethod -Method Post "http://127.0.0.1:8000/api/claims/<id>/report?narrative=true"
+```
+
+Projects the persisted Stage 1–5 results into a structured, traceable report.
+**Stage 4 owns the verdict**; Stage 6 copies it verbatim and never recalculates
+it. A test corrupts the stored verdict and asserts the report echoes the
+corruption rather than "fixing" it.
+
+Report shape:
+
+```
+claim
+verdict            <- copied from `verdicts`, never recomputed
+subclaims[]        <- each with its persisted subclaim_verdict
+  evidence[]       <- evidence_link_id -> passage_id -> source_id
+sources[]          <- with Stage 5 authority/recency/type assessment
+explanation        <- deterministic statements + optional narrative
+limitations[]      <- each with provenance (verdict / evidence / sources)
+```
+
+Every evidence item carries the full identity chain, so the frontend can build
+the graph without a second query and any displayed quote can be traced to the
+passage it came from.
+
+**No schema change.** The report is a projection, not a stored artifact: it is
+rebuilt from authoritative rows on every request, so there is nothing to keep in
+sync. The only field Stage 6 writes is `verdicts.report_generated_at`, which
+exists for exactly that purpose.
+
+**Optional LLM prose.** Off by default; the report is fully deterministic
+without it. When enabled, the model writes exactly one field,
+`explanation.narrative`, and receives the verdict as a fixed fact. The verdict
+fields come from the database, not the model, so prose cannot corrupt them — the
+worst case is a bad sentence beside a correct verdict. A narrow guard also
+discards a narrative that explicitly asserts a different claim-level verdict,
+while still allowing correct prose like "two of three subclaims were supported"
+under a MISLEADING verdict.
+
+Re-running is safe: each generation records its own `runs` attempt.
 
 ---
 
