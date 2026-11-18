@@ -1,4 +1,4 @@
-# ClaimChain AI
+﻿# ClaimChain AI
 
 Evidence-grounded claim verification and evidence mapping.
 
@@ -25,13 +25,13 @@ graph are implemented yet.
 | Backend skeleton + `GET /api/health` | done |
 | Frontend skeleton + backend connectivity | done |
 | Docker PostgreSQL | done |
-| Database schema (8 tables) | not started |
-| Stage 1 — decomposition | not started |
-| Stage 2 — evidence collection | not started |
-| Stage 3 — evidence analysis | not started |
-| Stage 5 — source assessment | not started |
-| Stage 4 — verification | not started |
-| Stage 6 — explainable report | not started |
+| Database schema (8 tables) + migration | done |
+| Stage 1 â€” decomposition | not started |
+| Stage 2 â€” evidence collection | not started |
+| Stage 3 â€” evidence analysis | not started |
+| Stage 5 â€” source assessment | not started |
+| Stage 4 â€” verification | not started |
+| Stage 6 â€” explainable report | not started |
 | Evidence graph + inspector UI | not started |
 | Evaluation harness | not started |
 
@@ -40,10 +40,10 @@ graph are implemented yet.
 ## Architecture
 
 ```
-React + TypeScript + React Flow  ──HTTP/JSON──▶  FastAPI (single monolith)
-                                                    ├── pipeline/   six stages
-                                                    ├── services/   llm, search, fetch, extract, chunk, cache
-                                                    └── PostgreSQL  single source of truth
+React + TypeScript + React Flow  â”€â”€HTTP/JSONâ”€â”€â–¶  FastAPI (single monolith)
+                                                    â”œâ”€â”€ pipeline/   six stages
+                                                    â”œâ”€â”€ services/   llm, search, fetch, extract, chunk, cache
+                                                    â””â”€â”€ PostgreSQL  single source of truth
 ```
 
 The evidence graph is **derived on read** from PostgreSQL rows. It is never
@@ -67,7 +67,7 @@ stored as a separate artifact, so the graph and the data cannot drift apart.
 ### Stage execution order
 
 ```
-Stage 1 → Stage 2 → Stage 3 → Stage 5 → Stage 4 → Stage 6
+Stage 1 â†’ Stage 2 â†’ Stage 3 â†’ Stage 5 â†’ Stage 4 â†’ Stage 6
 ```
 
 **Stage numbers are conceptual/rubric labels, not runtime execution order.**
@@ -92,7 +92,7 @@ Copy-Item .env.example .env
 ```
 
 Fill in `GEMINI_API_KEY` and `EXA_API_KEY`. The foundation runs fine without
-them — the health endpoint reports them as `not set` and nothing calls them yet.
+them â€” the health endpoint reports them as `not set` and nothing calls them yet.
 
 ### 2. PostgreSQL
 
@@ -150,12 +150,40 @@ npm run dev
 
 Open <http://localhost:5173>. The page reports live backend status.
 
-### 5. Tests
+### 5. Migrations
+
+```powershell
+cd backend
+.\.venv\Scripts\python.exe -m alembic upgrade head    # apply
+.\.venv\Scripts\python.exe -m alembic current         # show revision
+.\.venv\Scripts\python.exe -m alembic check           # detect model drift
+.\.venv\Scripts\python.exe -m alembic downgrade base  # drop everything
+```
+
+The database URL is read from `DATABASE_URL` by `alembic/env.py`. No credential
+is stored in `alembic.ini`.
+
+### 6. Round-trip check
+
+```powershell
+cd backend
+.\.venv\Scripts\python.exe -m app.db.seed_roundtrip
+```
+
+Inserts a claim and its full relationship tree, reads it back, verifies the
+cascade, then deletes it. Exits non-zero if the schema or ORM is broken, and
+leaves no data behind.
+
+### 7. Tests
 
 ```powershell
 cd backend
 .\.venv\Scripts\python.exe -m pytest tests -q
 ```
+
+Database tests run against an isolated `claimchain_test` database on the same
+container, with the real migration applied and every test rolled back. The
+development database is never touched.
 
 ---
 
@@ -176,7 +204,7 @@ cd backend
 | `MAX_CANDIDATES_PER_SUBCLAIM` | `8`. |
 | `PER_CLAIM_TOKEN_BUDGET` | `60000`. |
 | `USE_FIXTURES` | Replay recorded responses instead of live calls. Deferred. |
-| `VITE_API_BASE_URL` | Frontend → backend base URL. |
+| `VITE_API_BASE_URL` | Frontend â†’ backend base URL. |
 
 ---
 
@@ -199,47 +227,47 @@ cd backend
 
 ```
 claimchain/
-├── backend/
-│   ├── app/
-│   │   ├── main.py            app factory, CORS, router mount
-│   │   ├── config.py          typed settings from env
-│   │   ├── db/                engine, session, declarative base
-│   │   ├── api/               routers (health only, for now)
-│   │   ├── schemas/           pydantic request/response models
-│   │   ├── pipeline/          six stages + deterministic aggregation
-│   │   ├── services/          llm, search, fetch, extract, chunk, cache
-│   │   ├── prompts/           versioned prompt templates
-│   │   └── eval/              dataset, harness, metrics
-│   ├── alembic/               migrations
-│   ├── tests/                 unit, contract, integration, fixtures
-│   └── requirements.txt
-├── frontend/
-│   └── src/
-│       ├── api/               typed backend client
-│       ├── pages/             Home, Claim, Eval
-│       ├── components/        graph, inspector, verdict banner
-│       ├── types/             shared API types
-│       └── lib/               formatting, layout
-├── docker-compose.yml
-├── .env.example
-├── .gitignore
-└── README.md
+â”œâ”€â”€ backend/
+â”‚   â”œâ”€â”€ app/
+â”‚   â”‚   â”œâ”€â”€ main.py            app factory, CORS, router mount
+â”‚   â”‚   â”œâ”€â”€ config.py          typed settings from env
+â”‚   â”‚   â”œâ”€â”€ db/                engine, session, declarative base
+â”‚   â”‚   â”œâ”€â”€ api/               routers (health only, for now)
+â”‚   â”‚   â”œâ”€â”€ schemas/           pydantic request/response models
+â”‚   â”‚   â”œâ”€â”€ pipeline/          six stages + deterministic aggregation
+â”‚   â”‚   â”œâ”€â”€ services/          llm, search, fetch, extract, chunk, cache
+â”‚   â”‚   â”œâ”€â”€ prompts/           versioned prompt templates
+â”‚   â”‚   â””â”€â”€ eval/              dataset, harness, metrics
+â”‚   â”œâ”€â”€ alembic/               migrations
+â”‚   â”œâ”€â”€ tests/                 unit, contract, integration, fixtures
+â”‚   â””â”€â”€ requirements.txt
+â”œâ”€â”€ frontend/
+â”‚   â””â”€â”€ src/
+â”‚       â”œâ”€â”€ api/               typed backend client
+â”‚       â”œâ”€â”€ pages/             Home, Claim, Eval
+â”‚       â”œâ”€â”€ components/        graph, inspector, verdict banner
+â”‚       â”œâ”€â”€ types/             shared API types
+â”‚       â””â”€â”€ lib/               formatting, layout
+â”œâ”€â”€ docker-compose.yml
+â”œâ”€â”€ .env.example
+â”œâ”€â”€ .gitignore
+â””â”€â”€ README.md
 ```
 
 ---
 
 ## Implementation order
 
-1. Repo foundation — **done**
-2. Database — 8 SQLAlchemy models, Alembic initial migration, seed script
-3. Stage 1 + API skeleton — decomposition, `POST /api/claims`, `GET /api/claims/{id}`
-4. Retrieval layer — Exa, fetch, extract, chunk, cache, SSRF guard, fixture mode
-5. Stage 3 — batched analysis call, quote validation, `evidence_links` persisted
-6. Stage 5 + Stage 4 — source scoring and deterministic aggregation, unit suite
-7. Stage 6 + graph endpoint — report generation, `{nodes, edges}`
-8. Frontend — input, polling, verdict banner, React Flow, inspector
-9. Evaluation — annotate, run harness, run baseline A, comparison table
-10. Hardening and demo — offline mode, error states, demo script
+1. Repo foundation â€” **done**
+2. Database â€” 8 SQLAlchemy models, Alembic initial migration, seed script
+3. Stage 1 + API skeleton â€” decomposition, `POST /api/claims`, `GET /api/claims/{id}`
+4. Retrieval layer â€” Exa, fetch, extract, chunk, cache, SSRF guard, fixture mode
+5. Stage 3 â€” batched analysis call, quote validation, `evidence_links` persisted
+6. Stage 5 + Stage 4 â€” source scoring and deterministic aggregation, unit suite
+7. Stage 6 + graph endpoint â€” report generation, `{nodes, edges}`
+8. Frontend â€” input, polling, verdict banner, React Flow, inspector
+9. Evaluation â€” annotate, run harness, run baseline A, comparison table
+10. Hardening and demo â€” offline mode, error states, demo script
 
 Backend through step 7 is roughly 60% of the work. Do not start step 8 before
 step 7 is green.
@@ -258,4 +286,5 @@ ships a patched release.
 
 ## Team
 
-Prashnath G (2362539) · Darshan R (2361010)
+Prashnath G (2362539) Â· Darshan R (2361010)
+
