@@ -1,0 +1,38 @@
+# ===========================================================================
+# ClaimChain AI — local development infrastructure
+#
+# Project-isolated PostgreSQL. Deliberately published on host port 5433 so it
+# never collides with a host PostgreSQL installation on the default 5432.
+#
+#   docker compose up -d       start
+#   docker compose ps          check status
+#   docker compose logs -f db  follow logs
+#   docker compose down        stop (data survives in the named volume)
+#   docker compose down -v     stop and delete all data
+# ===========================================================================
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: claimchain-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: claimchain
+      POSTGRES_PASSWORD: claimchain
+      POSTGRES_DB: claimchain
+      # Deterministic collation so ORDER BY is stable across machines.
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    ports:
+      - "5433:5432"
+    volumes:
+      - claimchain_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U claimchain -d claimchain"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  claimchain_pgdata:
+    name: claimchain_pgdata
