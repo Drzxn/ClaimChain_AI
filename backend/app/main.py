@@ -13,7 +13,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
-from app.api import claims, health, retrieval
+from app.api import analysis, claims, health, retrieval
 
 logger = logging.getLogger(__name__)
 
@@ -66,9 +66,11 @@ def create_app() -> FastAPI:
     app.include_router(health.router, prefix=settings.api_prefix)
     app.include_router(claims.router, prefix=settings.api_prefix)
     app.include_router(retrieval.router, prefix=settings.api_prefix)
+    app.include_router(analysis.router, prefix=settings.api_prefix)
 
     return app
 
 
 app = create_app()
+
 

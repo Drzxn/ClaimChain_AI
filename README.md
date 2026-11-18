@@ -29,7 +29,7 @@ graph are implemented yet.
 | Database schema (8 tables) + migration | done |
 | Stage 1 — decomposition | done |
 | Stage 2 — evidence collection | done |
-| Stage 3 â€” evidence analysis | not started |
+| Stage 3 — evidence analysis | done |
 | Stage 5 â€” source assessment | not started |
 | Stage 4 â€” verification | not started |
 | Stage 6 â€” explainable report | not started |
@@ -223,6 +223,37 @@ Hard limits (constants in `app/pipeline/stage2_retrieve.py`):
 | Fetch timeout | 10 s |
 | Response size cap | 2 MB |
 | Redirects | 5, revalidated each hop |
+
+### 9. Stage 3 — evidence analysis
+
+```powershell
+# after Stage 2 has produced sources and passages
+Invoke-RestMethod -Method Post http://127.0.0.1:8000/api/claims/<id>/analyze
+```
+
+Classifies each candidate passage against its subclaim as `SUPPORTS`,
+`CONTRADICTS`, `MIXED` or `INSUFFICIENT`, and persists one `evidence_links` row
+per (subclaim, passage). It produces **no** verdicts: aggregation is Stage 4.
+
+One LLM call per subclaim, carrying that subclaim's passages. Subclaims are never
+merged into a single call.
+
+Deterministic checks on every response:
+
+- **Schema** — relationship must be one of the four tokens; scores must be in
+  `[0,1]`. `SUPPORTED`/`CONTRADICTED`/`MISLEADING` are rejected by name, because
+  they mean the model answered the overall question instead of the link.
+- **Quote** — must be a verbatim substring of that passage, tolerating whitespace
+  re-wrapping only. A failed quote is stored with `quote_validation = 'failed'`
+  and the unverifiable text is discarded, never kept as if it were evidence.
+- **Coverage** — a passage the model skipped becomes an `INSUFFICIENT` link with
+  zero confidence and a system rationale, so the abstention is visible.
+- **Failure rate** — two or more failed quotes *and* more than half failing
+  fails the stage, which is what a broken prompt looks like.
+
+Retrieved passages are untrusted data. The prompt states that passage content is
+never an instruction, and the schema rejects any attempt to smuggle a verdict
+token through it.
 
 ---
 
