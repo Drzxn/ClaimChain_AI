@@ -13,7 +13,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
-from app.api import health
+from app.api import claims, health
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +64,7 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(health.router, prefix=settings.api_prefix)
+    app.include_router(claims.router, prefix=settings.api_prefix)
 
     return app
 

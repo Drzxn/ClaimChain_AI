@@ -23,10 +23,11 @@ graph are implemented yet.
 | Area | State |
 | --- | --- |
 | Backend skeleton + `GET /api/health` | done |
+| Stage 1 + claims API (`POST`/`GET`) | done |
 | Frontend skeleton + backend connectivity | done |
 | Docker PostgreSQL | done |
 | Database schema (8 tables) + migration | done |
-| Stage 1 â€” decomposition | not started |
+| Stage 1 — decomposition | done |
 | Stage 2 â€” evidence collection | not started |
 | Stage 3 â€” evidence analysis | not started |
 | Stage 5 â€” source assessment | not started |
@@ -287,4 +288,6 @@ ships a patched release.
 ## Team
 
 Prashnath G (2362539) Â· Darshan R (2361010)
+
+
 

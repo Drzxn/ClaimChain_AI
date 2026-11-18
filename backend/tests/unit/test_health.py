@@ -39,6 +39,9 @@ def test_health_never_leaks_secrets(client: TestClient) -> None:
     assert "EXA_API_KEY" not in serialized
 
 
-def test_unknown_route_is_404(client: TestClient) -> None:
-    """Unimplemented routes are absent, not stubbed."""
-    assert client.get("/api/claims").status_code == 404
+def test_unimplemented_stage_routes_are_absent(client: TestClient) -> None:
+    """Later-stage routes are not stubbed into existence."""
+    # /api/claims exists (POST only); a GET on it is a method error, not a route.
+    assert client.get("/api/claims").status_code == 405
+    # Stage 2+ endpoints do not exist yet.
+    assert client.get("/api/claims/00000000-0000-0000-0000-000000000000/graph").status_code == 404
