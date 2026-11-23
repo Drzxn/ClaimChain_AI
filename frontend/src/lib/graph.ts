@@ -105,9 +105,11 @@ export function buildGraph(report: ClaimReport): GraphModel {
   });
 
   // Sources are shared across subclaims, so they are placed once and reused.
+  // A source is positioned at the y of the evidence row that first references
+  // it, which keeps it visually beside its evidence and guarantees it cannot
+  // collide with a subclaim or evidence node: evidence rows are unique within
+  // the single rowCursor sequence below.
   const sourceNodeIds = new Map<string, string>();
-  const sourceRowIndex = new Map<string, number>();
-  let nextSourceRow = 0;
 
   let rowCursor = 0;
 
@@ -176,14 +178,11 @@ export function buildGraph(report: ClaimReport): GraphModel {
         sourceNodeIds.set(evidence.source_id, sourceNodeId);
 
         const source = report.sources.find((s) => s.id === evidence.source_id);
-        const row = nextSourceRow;
-        nextSourceRow += 1;
-        sourceRowIndex.set(evidence.source_id, row);
 
         nodes.push({
           id: sourceNodeId,
           type: 'source',
-          position: { x: COLUMN_X.source, y: row * ROW_HEIGHT },
+          position: { x: COLUMN_X.source, y: evidenceY },
           data: {
             kind: 'source',
             label: truncate(source?.title || evidence.source_domain, 60),
