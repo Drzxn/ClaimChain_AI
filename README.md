@@ -15,10 +15,10 @@ verdict when the evidence does not support one.
 
 ## Status
 
-**Foundation build.** The repository contains project scaffolding, a booting
-FastAPI backend with a health endpoint, a booting React frontend, and local
-PostgreSQL infrastructure. No pipeline stages, retrieval, LLM calls, or evidence
-graph are implemented yet.
+**Core implementation complete.** The repository contains the full six-stage
+claim verification pipeline, React frontend with evidence graph and inspector UI,
+PostgreSQL persistence, deterministic verification, explainable reports, and a
+deterministic evaluation harness.
 
 | Area | State |
 | --- | --- |
@@ -33,8 +33,8 @@ graph are implemented yet.
 | Stage 5 — source assessment | done |
 | Stage 4 — verification | done |
 | Stage 6 — explainable report | done |
-| Evidence graph + inspector UI | not started |
-| Evaluation harness | not started |
+| Evidence graph + inspector UI | done |
+| Evaluation harness | done |
 
 ---
 
@@ -88,12 +88,10 @@ produces. Running them in numeric order would give every link a weight of zero.
 
 ### 1. Environment
 
+From the repository root:
+
 ```powershell
 Copy-Item .env.example .env
-```
-
-Fill in `GEMINI_API_KEY` and `EXA_API_KEY`. The foundation runs fine without
-them â€” the health endpoint reports them as `not set` and nothing calls them yet.
 
 ### 2. PostgreSQL
 
@@ -132,10 +130,9 @@ Expected response:
   "version": "0.1.0",
   "environment": "development",
   "database": "ok",
-  "llm_configured": false,
-  "search_configured": false
+  "llm_configured": true,
+  "search_configured": true
 }
-```
 
 `database` reads `ok` when the Docker container is reachable and `unavailable`
 when it is not. The endpoint always returns HTTP 200 while the process is alive,
@@ -151,7 +148,23 @@ npm run dev
 
 Open <http://localhost:5173>. The page reports live backend status.
 
-### 5. Migrations
+### 5. Using the application
+
+1. Start PostgreSQL with Docker.
+2. Start the FastAPI backend on port `8000`.
+3. Start the React frontend on port `5173`.
+4. Open `http://localhost:5173`.
+5. Enter a claim to verify.
+6. Submit the claim and wait for the verification pipeline to complete.
+7. Review the overall verdict, subclaim verdicts, supporting and contradicting
+   evidence, source assessments, and the interactive evidence graph.
+8. Select graph nodes to inspect the corresponding claim, subclaim, evidence
+   passage, or source.
+
+The frontend communicates with the backend through the API base URL configured
+by `VITE_API_BASE_URL`.
+
+### 6. Migrations
 
 ```powershell
 cd backend
@@ -164,7 +177,7 @@ cd backend
 The database URL is read from `DATABASE_URL` by `alembic/env.py`. No credential
 is stored in `alembic.ini`.
 
-### 6. Round-trip check
+### 7. Round-trip check
 
 ```powershell
 cd backend
@@ -175,7 +188,7 @@ Inserts a claim and its full relationship tree, reads it back, verifies the
 cascade, then deletes it. Exits non-zero if the schema or ORM is broken, and
 leaves no data behind.
 
-### 7. Tests
+### 8. Tests
 
 ```powershell
 cd backend
@@ -196,7 +209,7 @@ suite never spends quota:
 `test_gemini_smoke.py` needs `GEMINI_API_KEY`; `test_exa_smoke.py` needs
 `EXA_API_KEY`. Each skips cleanly when its key is absent.
 
-### 8. Stage 2 — evidence collection
+### 9. Stage 2 — evidence collection
 
 ```powershell
 # after POST /api/claims has decomposed a claim
@@ -224,7 +237,7 @@ Hard limits (constants in `app/pipeline/stage2_retrieve.py`):
 | Response size cap | 2 MB |
 | Redirects | 5, revalidated each hop |
 
-### 9. Stage 3 — evidence analysis
+### 10. Stage 3 — evidence analysis
 
 ```powershell
 # after Stage 2 has produced sources and passages
@@ -255,7 +268,7 @@ Retrieved passages are untrusted data. The prompt states that passage content is
 never an instruction, and the schema rejects any attempt to smuggle a verdict
 token through it.
 
-### 10. Stage 5 — source assessment
+### 11. Stage 5 — source assessment
 
 ```powershell
 # after Stage 2 has produced sources
@@ -310,7 +323,7 @@ Authority is not truth. A government site can publish something wrong; a blog ca
 publish something right. This stage describes the publisher — Stage 3 already
 judged the passage.
 
-### 11. Stage 4 — verification (deterministic)
+### 12. Stage 4 — verification (deterministic)
 
 ```powershell
 Invoke-RestMethod -Method Post http://127.0.0.1:8000/api/claims/<id>/verify
@@ -357,7 +370,7 @@ Canonical regression: the HTTPS claim yields SUPPORTED / SUPPORTED /
 CONTRADICTED, overall **MISLEADING** with score `0.3333`, coverage `1.0000`,
 contradicted ratio `0.3333`.
 
-### 12. Stage 6 — explainable report
+### 13. Stage 6 — explainable report
 
 ```powershell
 # build, record the run, and stamp report_generated_at
@@ -478,6 +491,17 @@ A case that raises is recorded as a failure with its error message and excluded
 from the metrics, so a run cannot look clean while cases vanished. The CLI
 returns a non-zero exit code if any case failed.
 
+The current v1.0.0 evaluation run contains 12 cases covering all five verdict
+classes.
+
+| Metric | Result |
+| --- | ---: |
+| Cases evaluated | 12 / 12 |
+| Accuracy | 1.0000 |
+| Macro precision | 1.0000 |
+| Macro recall | 1.0000 |
+| Macro F1 | 1.0000 |
+
 ---
 
 ## Environment variables
@@ -496,7 +520,7 @@ returns a non-zero exit code if any case failed.
 | `MAX_SUBCLAIMS` | `8`. |
 | `MAX_CANDIDATES_PER_SUBCLAIM` | `8`. |
 | `PER_CLAIM_TOKEN_BUDGET` | `60000`. |
-| `USE_FIXTURES` | Replay recorded responses instead of live calls. Deferred. |
+| `USE_FIXTURES` | Replay committed fixture responses instead of live external calls. |
 | `VITE_API_BASE_URL` | Frontend â†’ backend base URL. |
 
 ---
@@ -512,7 +536,8 @@ returns a non-zero exit code if any case failed.
   endpoint reports only a boolean `configured` flag.
 - The frontend talks only to the FastAPI backend. It holds no credentials.
 - Retrieved web content is treated as **untrusted data**, never as
-  instructions. Prompt-injection defenses land with Stage 3.
+  instructions. Stage 3 validates structured model output and prevents
+  retrieved content from being interpreted as instructions.
 
 ---
 
@@ -520,50 +545,49 @@ returns a non-zero exit code if any case failed.
 
 ```
 claimchain/
-â”œâ”€â”€ backend/
-â”‚   â”œâ”€â”€ app/
-â”‚   â”‚   â”œâ”€â”€ main.py            app factory, CORS, router mount
-â”‚   â”‚   â”œâ”€â”€ config.py          typed settings from env
-â”‚   â”‚   â”œâ”€â”€ db/                engine, session, declarative base
-â”‚   â”‚   â”œâ”€â”€ api/               routers (health only, for now)
-â”‚   â”‚   â”œâ”€â”€ schemas/           pydantic request/response models
-â”‚   â”‚   â”œâ”€â”€ pipeline/          six stages + deterministic aggregation
-â”‚   â”‚   â”œâ”€â”€ services/          llm, search, fetch, extract, chunk, cache
-â”‚   â”‚   â”œâ”€â”€ prompts/           versioned prompt templates
-â”‚   â”‚   â””â”€â”€ eval/              dataset, harness, metrics
-â”‚   â”œâ”€â”€ alembic/               migrations
-â”‚   â”œâ”€â”€ tests/                 unit, contract, integration, fixtures
-â”‚   â””â”€â”€ requirements.txt
-â”œâ”€â”€ frontend/
-â”‚   â””â”€â”€ src/
-â”‚       â”œâ”€â”€ api/               typed backend client
-â”‚       â”œâ”€â”€ pages/             Home, Claim, Eval
-â”‚       â”œâ”€â”€ components/        graph, inspector, verdict banner
-â”‚       â”œâ”€â”€ types/             shared API types
-â”‚       â””â”€â”€ lib/               formatting, layout
-â”œâ”€â”€ docker-compose.yml
-â”œâ”€â”€ .env.example
-â”œâ”€â”€ .gitignore
-â””â”€â”€ README.md
+├── backend/
+│   ├── app/
+│   │   ├── main.py            app factory, CORS, router mount
+│   │   ├── config.py          typed settings from env
+│   │   ├── db/                engine, session, declarative base
+│   │   ├── api/               HTTP API routers
+│   │   ├── schemas/            pydantic request/response models
+│   │   ├── pipeline/           six stages + deterministic aggregation
+│   │   ├── services/           llm, search, fetch, extract, chunk, cache
+│   │   ├── prompts/            versioned prompt templates
+│   │   └── eval/               dataset, harness, metrics
+│   ├── alembic/                migrations
+│   ├── tests/                  unit, contract, integration, fixtures
+│   └── requirements.txt
+├── frontend/
+│   └── src/
+│       ├── api/                typed backend client and API types
+│       ├── components/         claim input, report, graph, inspector, verdict UI
+│       └── lib/                graph layout and verdict utilities
+├── docker-compose.yml
+├── .env.example
+├── .gitignore
+└── README.md
 ```
 
 ---
 
-## Implementation order
+## Implementation status
 
-1. Repo foundation â€” **done**
-2. Database â€” 8 SQLAlchemy models, Alembic initial migration, seed script
-3. Stage 1 + API skeleton â€” decomposition, `POST /api/claims`, `GET /api/claims/{id}`
-4. Retrieval layer â€” Exa, fetch, extract, chunk, cache, SSRF guard, fixture mode
-5. Stage 3 â€” batched analysis call, quote validation, `evidence_links` persisted
-6. Stage 5 + Stage 4 â€” source scoring and deterministic aggregation, unit suite
-7. Stage 6 + graph endpoint â€” report generation, `{nodes, edges}`
-8. Frontend â€” input, polling, verdict banner, React Flow, inspector
-9. Evaluation â€” annotate, run harness, run baseline A, comparison table
-10. Hardening and demo â€” offline mode, error states, demo script
+1. Repo foundation — **done**
+2. Database — **done**
+3. Stage 1 + API skeleton — **done**
+4. Retrieval layer — **done**
+5. Stage 3 — **done**
+6. Stage 5 + Stage 4 — **done**
+7. Stage 6 + evidence graph — **done**
+8. Frontend — **done**
+9. Evaluation harness — **done**
+10. Hardening and validation — **done**
 
-Backend through step 7 is roughly 60% of the work. Do not start step 8 before
-step 7 is green.
+The current repository represents the completed v1 implementation. Further work
+should focus on documentation, demonstration, evaluation expansion, and future
+features rather than changing the frozen verification architecture.
 
 ---
 
@@ -579,7 +603,7 @@ ships a patched release.
 
 ## Team
 
-Prashnath G (2362539) Â· Darshan R (2361010)
+Prashnath G (2362539) · Darshan R (2361010) · Yazhini C (2362542)
 
 
 
