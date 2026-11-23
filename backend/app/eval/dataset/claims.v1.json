@@ -1,0 +1,404 @@
+{
+  "version": "1.0.0",
+  "name": "ClaimChain AI demonstration evaluation set",
+  "description": "A small, manually curated set of claim cases used to demonstrate and evaluate the deterministic verification pipeline. Each case carries the evidence links a retrieval stage would have produced, so the whole evaluation runs offline through the real Stage 4 aggregation code. This is NOT a statistically representative benchmark: it is a transparent demonstration set, sized for a university project review.",
+  "curation": "Hand-authored. Each case states the subclaims a decomposition would produce and the relationship each retrieved passage was judged to have. Expected verdicts were derived from the frozen agg-1.0.0 rules, not fitted to the output.",
+  "aggregation_version": "agg-1.0.0",
+  "cases": [
+    {
+      "case_id": "https-absolute-security",
+      "claim_text": "Using HTTPS makes a website completely secure.",
+      "category": "mixed_misleading",
+      "expected_verdict": "MISLEADING",
+      "notes": "The project's canonical example. Two subclaims hold, the absolute completeness claim does not.",
+      "subclaims": [
+        {
+          "ordinal": 1,
+          "text": "HTTPS encrypts data in transit between the browser and the server.",
+          "claim_type": "factual",
+          "links": [
+            {
+              "relationship": "SUPPORTS",
+              "authority": 0.8,
+              "recency": 1.0,
+              "relevance": 0.95,
+              "evidence_quality": 0.9,
+              "stance_confidence": 0.92
+            }
+          ]
+        },
+        {
+          "ordinal": 2,
+          "text": "HTTPS protects against some classes of network attack.",
+          "claim_type": "causal",
+          "links": [
+            {
+              "relationship": "SUPPORTS",
+              "authority": 0.8,
+              "recency": 1.0,
+              "relevance": 0.9,
+              "evidence_quality": 0.85,
+              "stance_confidence": 0.88
+            }
+          ]
+        },
+        {
+          "ordinal": 3,
+          "text": "HTTPS makes a website completely secure against all attacks.",
+          "claim_type": "factual",
+          "links": [
+            {
+              "relationship": "CONTRADICTS",
+              "authority": 0.8,
+              "recency": 1.0,
+              "relevance": 0.95,
+              "evidence_quality": 0.9,
+              "stance_confidence": 0.9
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "water-boiling-point",
+      "claim_text": "Water boils at 100 degrees Celsius at sea level.",
+      "category": "true",
+      "expected_verdict": "SUPPORTED",
+      "notes": "A well-established physical fact with consistent supporting evidence.",
+      "subclaims": [
+        {
+          "ordinal": 1,
+          "text": "Water boils at 100 degrees Celsius at standard atmospheric pressure.",
+          "claim_type": "quantitative",
+          "links": [
+            {
+              "relationship": "SUPPORTS",
+              "authority": 1.0,
+              "recency": 1.0,
+              "relevance": 0.95,
+              "evidence_quality": 0.95,
+              "stance_confidence": 0.95
+            }
+          ]
+        },
+        {
+          "ordinal": 2,
+          "text": "Sea level corresponds to standard atmospheric pressure.",
+          "claim_type": "definitional",
+          "links": [
+            {
+              "relationship": "SUPPORTS",
+              "authority": 1.0,
+              "recency": 1.0,
+              "relevance": 0.9,
+              "evidence_quality": 0.9,
+              "stance_confidence": 0.9
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "great-wall-from-space",
+      "claim_text": "The Great Wall of China is the only man-made object visible from space with the naked eye.",
+      "category": "false",
+      "expected_verdict": "CONTRADICTED",
+      "notes": "A widely repeated claim that is contradicted by astronaut accounts and optical physics.",
+      "subclaims": [
+        {
+          "ordinal": 1,
+          "text": "The Great Wall of China is visible from space with the naked eye.",
+          "claim_type": "factual",
+          "links": [
+            {
+              "relationship": "CONTRADICTS",
+              "authority": 1.0,
+              "recency": 1.0,
+              "relevance": 0.95,
+              "evidence_quality": 0.9,
+              "stance_confidence": 0.92
+            }
+          ]
+        },
+        {
+          "ordinal": 2,
+          "text": "The Great Wall is the only man-made object visible from space.",
+          "claim_type": "comparative",
+          "links": [
+            {
+              "relationship": "CONTRADICTS",
+              "authority": 1.0,
+              "recency": 1.0,
+              "relevance": 0.9,
+              "evidence_quality": 0.9,
+              "stance_confidence": 0.88
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "vaccines-autism",
+      "claim_text": "Vaccines cause autism.",
+      "category": "false",
+      "expected_verdict": "CONTRADICTED",
+      "notes": "Contradicted by large epidemiological studies; the originating paper was retracted.",
+      "subclaims": [
+        {
+          "ordinal": 1,
+          "text": "Vaccination causes autism spectrum disorder.",
+          "claim_type": "causal",
+          "links": [
+            {
+              "relationship": "CONTRADICTS",
+              "authority": 1.0,
+              "recency": 1.0,
+              "relevance": 0.95,
+              "evidence_quality": 0.95,
+              "stance_confidence": 0.95
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "aspirin-headache",
+      "claim_text": "Aspirin can reduce headache pain.",
+      "category": "true",
+      "expected_verdict": "SUPPORTED",
+      "notes": "A modest, well-supported clinical claim.",
+      "subclaims": [
+        {
+          "ordinal": 1,
+          "text": "Aspirin has analgesic properties.",
+          "claim_type": "factual",
+          "links": [
+            {
+              "relationship": "SUPPORTS",
+              "authority": 0.9,
+              "recency": 0.9,
+              "relevance": 0.9,
+              "evidence_quality": 0.85,
+              "stance_confidence": 0.88
+            }
+          ]
+        },
+        {
+          "ordinal": 2,
+          "text": "Aspirin reduces the pain of tension headaches.",
+          "claim_type": "causal",
+          "links": [
+            {
+              "relationship": "SUPPORTS",
+              "authority": 0.9,
+              "recency": 0.9,
+              "relevance": 0.85,
+              "evidence_quality": 0.8,
+              "stance_confidence": 0.82
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "moon-landing-hoax",
+      "claim_text": "The Apollo 11 Moon landings were staged in a film studio.",
+      "category": "false",
+      "expected_verdict": "CONTRADICTED",
+      "notes": "Contradicted by physical evidence, independent tracking, and retroreflectors still in use.",
+      "subclaims": [
+        {
+          "ordinal": 1,
+          "text": "The Apollo 11 landing was filmed in a studio rather than on the Moon.",
+          "claim_type": "factual",
+          "links": [
+            {
+              "relationship": "CONTRADICTS",
+              "authority": 1.0,
+              "recency": 1.0,
+              "relevance": 0.95,
+              "evidence_quality": 0.95,
+              "stance_confidence": 0.95
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "coffee-dehydration",
+      "claim_text": "Drinking coffee dehydrates you.",
+      "category": "mixed_misleading",
+      "expected_verdict": "MISLEADING",
+      "notes": "Coffee has a mild diuretic effect but still contributes to fluid intake. Two supporting subclaims against one contradicted absolute, so the score stays positive while a material part is refuted.",
+      "subclaims": [
+        {
+          "ordinal": 1,
+          "text": "Caffeine has a mild diuretic effect.",
+          "claim_type": "causal",
+          "links": [
+            {
+              "relationship": "SUPPORTS",
+              "authority": 0.9,
+              "recency": 1.0,
+              "relevance": 0.9,
+              "evidence_quality": 0.85,
+              "stance_confidence": 0.85
+            }
+          ]
+        },
+        {
+          "ordinal": 2,
+          "text": "Coffee contributes to daily fluid intake.",
+          "claim_type": "factual",
+          "links": [
+            {
+              "relationship": "SUPPORTS",
+              "authority": 0.9,
+              "recency": 1.0,
+              "relevance": 0.85,
+              "evidence_quality": 0.85,
+              "stance_confidence": 0.85
+            }
+          ]
+        },
+        {
+          "ordinal": 3,
+          "text": "Drinking coffee leaves a person net dehydrated.",
+          "claim_type": "causal",
+          "links": [
+            {
+              "relationship": "CONTRADICTS",
+              "authority": 0.9,
+              "recency": 1.0,
+              "relevance": 0.9,
+              "evidence_quality": 0.85,
+              "stance_confidence": 0.85
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "lightning-never-strikes-twice",
+      "claim_text": "Lightning never strikes the same place twice.",
+      "category": "false",
+      "expected_verdict": "CONTRADICTED",
+      "notes": "Tall structures are struck repeatedly; the absolute 'never' is refuted.",
+      "subclaims": [
+        {
+          "ordinal": 1,
+          "text": "Lightning never strikes the same location more than once.",
+          "claim_type": "factual",
+          "links": [
+            {
+              "relationship": "CONTRADICTS",
+              "authority": 0.9,
+              "recency": 1.0,
+              "relevance": 0.9,
+              "evidence_quality": 0.9,
+              "stance_confidence": 0.9
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "unverifiable-claim",
+      "claim_text": "A private company will announce a breakthrough product next Tuesday.",
+      "category": "insufficient",
+      "expected_verdict": "INSUFFICIENT_EVIDENCE",
+      "notes": "No retrievable evidence bears on a future private announcement, so the system must abstain.",
+      "subclaims": [
+        {
+          "ordinal": 1,
+          "text": "A private company will announce a breakthrough product next Tuesday.",
+          "claim_type": "factual",
+          "links": []
+        }
+      ]
+    },
+    {
+      "case_id": "unverifiable-obscure",
+      "claim_text": "An unnamed researcher once measured a record in an unrecorded experiment.",
+      "category": "insufficient",
+      "expected_verdict": "INSUFFICIENT_EVIDENCE",
+      "notes": "The claim is constructed so that no source could settle it; abstention is the correct outcome.",
+      "subclaims": [
+        {
+          "ordinal": 1,
+          "text": "An unnamed researcher measured a record in an unrecorded experiment.",
+          "claim_type": "factual",
+          "links": []
+        }
+      ]
+    },
+    {
+      "case_id": "partial-coverage",
+      "claim_text": "Regular exercise improves cardiovascular health, doubles lifespan, and prevents all disease.",
+      "category": "insufficient",
+      "expected_verdict": "INSUFFICIENT_EVIDENCE",
+      "notes": "Only one of three subclaims has usable evidence, so coverage is 0.3333, below the 0.50 floor. The system abstains rather than guessing from a third of the claim.",
+      "subclaims": [
+        {
+          "ordinal": 1,
+          "text": "Regular exercise improves cardiovascular health.",
+          "claim_type": "causal",
+          "links": [
+            {
+              "relationship": "SUPPORTS",
+              "authority": 0.9,
+              "recency": 1.0,
+              "relevance": 0.9,
+              "evidence_quality": 0.9,
+              "stance_confidence": 0.9
+            }
+          ]
+        },
+        {
+          "ordinal": 2,
+          "text": "Regular exercise doubles human lifespan.",
+          "claim_type": "quantitative",
+          "links": []
+        },
+        {
+          "ordinal": 3,
+          "text": "Regular exercise prevents all disease.",
+          "claim_type": "causal",
+          "links": []
+        }
+      ]
+    },
+    {
+      "case_id": "balanced-mixed",
+      "claim_text": "Remote work increases productivity for all employees.",
+      "category": "mixed_misleading",
+      "expected_verdict": "MIXED",
+      "notes": "Evidence is genuinely split, so neither side dominates and the result is mixed rather than misleading.",
+      "subclaims": [
+        {
+          "ordinal": 1,
+          "text": "Remote work increases productivity.",
+          "claim_type": "causal",
+          "links": [
+            {
+              "relationship": "SUPPORTS",
+              "authority": 0.8,
+              "recency": 1.0,
+              "relevance": 0.9,
+              "evidence_quality": 0.8,
+              "stance_confidence": 0.8
+            },
+            {
+              "relationship": "CONTRADICTS",
+              "authority": 0.8,
+              "recency": 1.0,
+              "relevance": 0.9,
+              "evidence_quality": 0.8,
+              "stance_confidence": 0.8
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

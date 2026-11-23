@@ -409,6 +409,77 @@ Re-running is safe: each generation records its own `runs` attempt.
 
 ---
 
+## Evaluation
+
+A small deterministic harness measures whether the verification pipeline reaches
+the right verdict for a set of known claims.
+
+```powershell
+cd backend
+.\.venv\Scripts\python.exe -m app.eval.run
+```
+
+**Offline and reproducible.** No API keys, no network, no database. The harness
+feeds each case's evidence links straight into the real Stage 4 aggregation
+functions (`aggregate_subclaim`, `aggregate_overall`), so the verdicts under test
+come from the same code that serves the API, not a parallel copy.
+
+Options:
+
+```powershell
+--dataset PATH       # use a different dataset file
+--output-dir PATH    # write artifacts elsewhere
+--no-write           # print the summary only
+```
+
+### Dataset
+
+`backend/app/eval/dataset/claims.v1.json` — 12 hand-curated cases covering all
+five outcomes: SUPPORTED, CONTRADICTED, MIXED, MISLEADING and
+INSUFFICIENT_EVIDENCE.
+
+Each case states the subclaims a decomposition would produce and the
+relationship each retrieved passage was judged to have. Expected verdicts were
+derived from the frozen `agg-1.0.0` rules, not fitted to the output.
+
+**This is a manually curated demonstration set, not a statistically
+representative benchmark.** It exists to show the decision layer behaves
+correctly on clear-cut and adversarial cases, and to catch regressions. Twelve
+cases cannot support claims about real-world accuracy.
+
+### What the evaluation does and does not measure
+
+Stages 1, 2, 3 and 5 are **not executed**: decomposition, retrieval and source
+assessment need live Gemini and Exa, which would make a run non-deterministic and
+quota-dependent. The dataset supplies the evidence links those stages would have
+produced.
+
+So the harness measures the **deterministic decision layer**: given this
+evidence, does the system reach the right verdict? It does not measure retrieval
+quality or decomposition quality.
+
+### Metrics
+
+- Accuracy
+- Macro precision, recall and F1 (averaged over classes that actually occur)
+- Per-class precision, recall, F1 and support
+- Confusion matrix with every cell present
+
+Macro averages skip classes with zero support, so an absent label cannot drag the
+score down. Zero denominators yield `0.0` rather than an error.
+
+### Results
+
+Written to `backend/app/eval/results/` as `eval_<timestamp>.json` (full report,
+including every case) and `eval_<timestamp>.csv` (one row per case). Both are
+generated artifacts and git-ignored; only the directory README is tracked.
+
+A case that raises is recorded as a failure with its error message and excluded
+from the metrics, so a run cannot look clean while cases vanished. The CLI
+returns a non-zero exit code if any case failed.
+
+---
+
 ## Environment variables
 
 | Variable | Purpose |
